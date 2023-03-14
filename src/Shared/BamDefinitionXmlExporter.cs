@@ -3,13 +3,14 @@
 // Copyright (c) 2007 Darren Jefford. All Rights Reserved.
 // Licensed under the MIT License. See License.txt in the project root.
 
+using ClosedXML.Excel;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Reflection;
-using System.IO;
-using System.Data.OleDb;
 using System.Data;
+using System.Data.OleDb;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
 
 namespace Shared
 {
@@ -27,6 +28,10 @@ namespace Shared
                 throw new ArgumentException("File '" + xlsFileName + "' does not exist or is unavailable.");
             }
 
+            if (xlsFileName.EndsWith(".xlsx") && !useAutomation)
+            {
+                return GetBamDefinitionXmlFromXlsx(xlsFileName);
+            }
             if (useAutomation)
             {
                 return GetBamDefinitionXmlAutomation(xlsFileName);
@@ -37,6 +42,38 @@ namespace Shared
             }
         }
 
+        private static string GetBamDefinitionXmlFromXlsx(string xlsFileName)
+        {
+            using (var workbook = new XLWorkbook(xlsFileName))
+            {
+                foreach (var sheet in workbook.Worksheets)
+                {
+                    Console.WriteLine(sheet.Name);
+                }
+                IXLWorksheet bamWorksheet;
+                var success = workbook.Worksheets.TryGetWorksheet("BamXmlHiddenSheet", out bamWorksheet);
+                if (!success)
+                {
+                    throw new ArgumentException("ERROR: Could not find hidden BAM worksheet BamXmlHiddenSheet.");
+                }
+                var bamColumn = bamWorksheet.FirstColumn();
+                var bamCells = bamColumn.CellsUsed();
+
+                if (bamCells.Count() == 0)
+                {
+                    throw new ArgumentException(
+                        "ERROR: Could not find hidden BAM worksheet or found no BAM XML on the worksheet. Expected to find BAM XML at cell BamXmlHiddenSheet!A1.");
+                }
+                StringBuilder sb = new StringBuilder();
+                foreach (var cell in bamCells)
+                {
+                    Console.WriteLine(cell.Value);
+                    sb.Append(cell.Value.ToString());
+                }
+
+                return sb.ToString();
+            }
+        }
         private static string GetBamDefinitionXmlDirect(string xlsFileName)
         {
             DataSet ds = new DataSet();
@@ -96,7 +133,7 @@ namespace Shared
                     break;
                 }
             }
-            
+
             return sb.ToString();
         }
 
