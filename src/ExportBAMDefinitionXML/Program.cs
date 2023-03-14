@@ -20,26 +20,12 @@ namespace ExportBamDefinitionXml
 
             string xLSFileName = args[0];
             string outputFileName = args[1];
-            bool useAutomation = false;
-
-            if (args.Length == 3)
-            {
-                // If parses to true then useAutomation will be true, otherwise it will be false.
-                bool.TryParse(args[2], out useAutomation);
-            }
-
             PrintHeader();
 
             try
             {
-                if (useAutomation)
-                {
-                    Console.WriteLine("Exporting in legacy Excel Automation mode.");
-                    Console.WriteLine();
-                }
-
                 Console.Write("Exporting BAM XML Definition from the Excel Spreadsheet... ");
-                string bAMDefinitionXML = Shared.BamDefinitionXmlExporter.GetBamDefinitionXml(xLSFileName, useAutomation);
+                string bAMDefinitionXML = Shared.BamDefinitionXmlExporter.GetBamDefinitionXml(xLSFileName);
                 File.WriteAllText(outputFileName, bAMDefinitionXML, UnicodeEncoding.Unicode);
                 Console.WriteLine("Success");
                 Console.WriteLine();
